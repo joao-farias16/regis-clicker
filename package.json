@@ -1,0 +1,11 @@
+{
+  "name": "regis-clicker",
+  "version": "1.0.0",
+  "description": "Régis Clicker — um jogo incremental sobre produzir quantidades absurdas de Régis.",
+  "private": true,
+  "scripts": {
+    "dev": "npx --yes http-server -p 8080 -c-1",
+    "start": "npx --yes http-server -p 8080 -c-1"
+  },
+  "license": "UNLICENSED"
+}

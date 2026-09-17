@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Régis Clicker</title>
+  <meta name="description" content="Régis Clicker — um jogo incremental sobre produzir quantidades absurdas de Régis." />
+  <meta property="og:title" content="Régis Clicker" />
+  <meta property="og:description" content="Clique, produza e alcance números que não deveriam existir." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header id="header">
+      <h1>RÉGIS CLICKER</h1>
+      <nav id="menu" aria-label="Menu principal">
+        <button class="tab-btn active" data-tab="jogar">Jogar</button>
+        <button class="tab-btn" data-tab="upgrades">Upgrades</button>
+        <button class="tab-btn" data-tab="prestigio">Prestígio</button>
+        <button class="tab-btn" data-tab="conquistas">Conquistas</button>
+        <button class="tab-btn" data-tab="estatisticas">Estatísticas</button>
+        <button class="tab-btn" data-tab="colecao">Coleção</button>
+        <button class="tab-btn" data-tab="desafios">Desafios</button>
+        <button class="tab-btn" data-tab="configuracoes">Configurações</button>
+        <button class="tab-btn" data-tab="saves">Saves</button>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section id="tab-jogar" class="tab-panel active">
+        <div class="game-columns">
+          <aside id="panel-produtores-wrap" class="panel-wrap">
+            <div class="panel-header">
+              <h2>Produtores</h2>
+              <div class="buy-qty-group" role="group" aria-label="Quantidade de compra">
+                <button class="buy-qty-btn active" data-qty="1">1</button>
+                <button class="buy-qty-btn" data-qty="10">10</button>
+                <button class="buy-qty-btn" data-qty="100">100</button>
+                <button class="buy-qty-btn" data-qty="max">MÁX</button>
+              </div>
+            </div>
+            <div id="panel-produtores" class="panel scroll-panel"></div>
+          </aside>
+
+          <section id="panel-central">
+            <div id="cps-display">Régis por segundo: <span id="cps-value">0</span></div>
+
+            <div id="regis-click-area">
+              <div id="event-entity-container"></div>
+              <button id="regis-button" aria-label="Clique no Régis para gerar mais Régis">
+                <img src="assets/regis.png" alt="Régis">
+              </button>
+              <div id="click-popups" aria-hidden="true"></div>
+            </div>
+
+            <div id="regis-counter"><span id="regis-value">0</span> Régis</div>
+            <div id="click-value-display">Valor por clique: <span id="click-value">1</span></div>
+            <div id="combo-display"></div>
+            <div id="buffs-display"></div>
+          </section>
+
+          <aside id="panel-upgrades-quick" class="panel-wrap">
+            <div class="panel-header"><h2>Upgrades Rápidos</h2></div>
+            <p class="sidebar-hint">Veja a aba <strong>Upgrades</strong> para a lista completa. Os upgrades mais próximos de serem desbloqueados aparecerão em breve aqui.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section id="tab-upgrades" class="tab-panel"></section>
+      <section id="tab-prestigio" class="tab-panel"></section>
+      <section id="tab-conquistas" class="tab-panel"></section>
+      <section id="tab-estatisticas" class="tab-panel"></section>
+      <section id="tab-colecao" class="tab-panel"></section>
+      <section id="tab-desafios" class="tab-panel"></section>
+      <section id="tab-configuracoes" class="tab-panel"></section>
+      <section id="tab-saves" class="tab-panel"></section>
+    </main>
+  </div>
+
+  <div id="notifications" aria-live="polite"></div>
+  <div id="tooltip" class="hidden" role="tooltip"></div>
+  <div id="modal-overlay" class="hidden">
+    <div id="modal-content" role="dialog" aria-modal="true"></div>
+  </div>
+
+  <!-- ordem importa: dados e utilitários primeiro, depois lógica, depois UI e main -->
+  <script src="js/utils.js"></script>
+  <script src="js/numbers.js"></script>
+  <script src="js/data/buildings.js"></script>
+  <script src="js/data/upgrades.js"></script>
+  <script src="js/data/events.js"></script>
+  <script src="js/data/prestige.js"></script>
+  <script src="js/data/content.js"></script>
+  <script src="js/data/achievements.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/economy.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/buildings.js"></script>
+  <script src="js/upgrades.js"></script>
+  <script src="js/achievements.js"></script>
+  <script src="js/events.js"></script>
+  <script src="js/prestige.js"></script>
+  <script src="js/offline.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
