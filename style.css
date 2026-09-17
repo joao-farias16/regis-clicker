@@ -248,30 +248,19 @@ body.high-contrast {
 }
 
 #regis-button {
-  width: 260px;
-  height: 260px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: inherit;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  border: 6px solid var(--accent);
+  background: radial-gradient(circle at 35% 30%, var(--accent-2), var(--accent) 60%, #a5480f 100%);
+  color: #200e00;
+  font-size: 1.8rem;
+  font-weight: 900;
+  letter-spacing: 2px;
   cursor: pointer;
+  box-shadow: 0 0 40px rgba(255, 157, 61, 0.45), inset 0 -10px 20px rgba(0,0,0,0.25);
   transition: transform 0.06s ease;
   z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#regis-button img {
-  width: 250px;
-  height: 270px;
-  object-fit: contain;
-  object-position: center;
-  display: block;
-  user-select: none;
-  -webkit-user-drag: none;
-  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.35));
-  border-radius: 50%;
 }
 
 #regis-button:active,
