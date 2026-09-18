@@ -259,6 +259,16 @@ body.high-contrast {
   justify-content: center;
 }
 
+@keyframes regisRotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 #regis-button img {
   width: 250px;
   height: 270px;
@@ -269,6 +279,7 @@ body.high-contrast {
   -webkit-user-drag: none;
   filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.35));
   border-radius: 50%;
+  animation: regisRotate 8s linear infinite;
 }
 
 #regis-button:active,

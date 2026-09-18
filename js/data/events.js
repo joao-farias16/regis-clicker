@@ -14,8 +14,8 @@ const EVENTS_DATA = [
     lifetimeSeconds: 13,
     messages: ['Um Régis Dourado apareceu! Clique rápido!'],
     rollEffects: [
-      { effect: { type: 'production_mult', value: 7, duration: 77 }, weight: 30, text: 'Produção x7 por 77 segundos!' },
-      { effect: { type: 'click_mult', value: 7, duration: 30 }, weight: 30, text: 'Clique x7 por 30 segundos!' },
+      { effect: { type: 'production_mult', value: 7, duration: 77 }, weight: 30, text: 'Produção x7 por {duration} segundos!' },
+      { effect: { type: 'click_mult', value: 7, duration: 30 }, weight: 30, text: 'Clique x7 por {duration} segundos!' },
       { effect: { type: 'instant_regis', secondsWorth: 60 }, weight: 25, text: 'Você recebeu uma grande quantidade instantânea de Régis!' },
       { effect: { type: 'production_penalty', value: 0.5, duration: 10 }, weight: 15, text: 'Ops! Produção reduzida temporariamente...' }
     ]
@@ -29,7 +29,7 @@ const EVENTS_DATA = [
     lifetimeSeconds: 10,
     messages: ['Régis Frenético! A produção está saindo de controle!'],
     rollEffects: [
-      { effect: { type: 'production_mult', value: 12, duration: 45 }, weight: 100, text: 'Produção x12 por 45 segundos!' }
+      { effect: { type: 'production_mult', value: 12, duration: 45 }, weight: 100, text: 'Produção x12 por {duration} segundos!' }
     ]
   },
   {
@@ -41,7 +41,7 @@ const EVENTS_DATA = [
     lifetimeSeconds: 10,
     messages: ['Clique Insano! Seus dedos não vão acreditar!'],
     rollEffects: [
-      { effect: { type: 'click_mult', value: 15, duration: 30 }, weight: 100, text: 'Clique x15 por 30 segundos!' }
+      { effect: { type: 'click_mult', value: 15, duration: 30 }, weight: 100, text: 'Clique x15 por {duration} segundos!' }
     ]
   },
   {
@@ -53,8 +53,8 @@ const EVENTS_DATA = [
     lifetimeSeconds: 8,
     messages: ['Régis Maluco! Ninguém sabe o que vai acontecer.'],
     rollEffects: [
-      { effect: { type: 'production_mult', value: 25, duration: 60 }, weight: 50, text: 'Produção x25 por 60 segundos! Que loucura!' },
-      { effect: { type: 'click_mult', value: 50, duration: 25 }, weight: 50, text: 'Clique x50 por 25 segundos! Isso é maluquice!' }
+      { effect: { type: 'production_mult', value: 25, duration: 60 }, weight: 50, text: 'Produção x25 por {duration} segundos! Que loucura!' },
+      { effect: { type: 'click_mult', value: 50, duration: 25 }, weight: 50, text: 'Clique x50 por {duration} segundos! Isso é maluquice!' }
     ]
   },
   {
@@ -78,7 +78,7 @@ const EVENTS_DATA = [
     lifetimeSeconds: 7,
     messages: ['REGIS DOURADO GIGANTE! Isso é raríssimo!'],
     rollEffects: [
-      { effect: { type: 'production_mult', value: 50, duration: 90 }, weight: 50, text: 'Produção x50 por 90 segundos!!' },
+      { effect: { type: 'production_mult', value: 50, duration: 90 }, weight: 50, text: 'Produção x50 por {duration} segundos!!' },
       { effect: { type: 'instant_regis', secondsWorth: 900 }, weight: 50, text: 'Uma quantidade absurda de Régis surgiu do nada!' }
     ]
   },
@@ -91,8 +91,8 @@ const EVENTS_DATA = [
     lifetimeSeconds: 6,
     messages: ['O RÉGIS CÓSMICO desceu dos céus. Isso quase nunca acontece.'],
     rollEffects: [
-      { effect: { type: 'production_mult', value: 100, duration: 120 }, weight: 40, text: 'Produção x100 por 2 minutos inteiros!' },
-      { effect: { type: 'click_mult', value: 100, duration: 60 }, weight: 30, text: 'Clique x100 por 60 segundos!' },
+      { effect: { type: 'production_mult', value: 100, duration: 120 }, weight: 40, text: 'Produção x100 por {duration} segundos!' },
+      { effect: { type: 'click_mult', value: 100, duration: 60 }, weight: 30, text: 'Clique x100 por {duration} segundos!' },
       { effect: { type: 'instant_regis', secondsWorth: 3600 }, weight: 30, text: 'Uma hora inteira de produção, entregue instantaneamente!' }
     ]
   }
