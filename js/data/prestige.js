@@ -6,7 +6,16 @@
  */
 
 const PRESTIGE_CONFIG = {
+  // ATENÇÃO — rebalanceamento (v2): o ganho de prestígio agora é calculado a
+  // partir do Régis produzido *desde a última ascensão* (totalRegisThisAscension),
+  // e não mais do total acumulado na vida toda do jogo. Isso corrige um exploit
+  // em que era possível ascender repetidamente com ganhos marginais, já que o
+  // total vitalício nunca reseta e qualquer produção residual bastava para
+  // liberar uma nova ascensão. Veja PrestigeLogic.calculateCelestialGain().
   divisor: 1e12,
+  // a cada ascensão já realizada, o divisor efetivo cresce por este fator,
+  // tornando ascensões sucessivas progressivamente mais exigentes.
+  divisorGrowth: 1.55,
   root: 2.2,
   currencyName: 'Régis Celestial',
   currencyNamePlural: 'Régis Celestiais'
@@ -172,10 +181,121 @@ const PRESTIGE_TREE_DATA = [
     id: 'p_concilio_dos_ascendentes',
     name: 'Concílio dos Ascendentes',
     icon: '👑',
-    description: 'O topo da árvore. Poucos chegam até aqui.',
+    description: 'O topo da árvore original. Poucos chegam até aqui.',
     cost: 75,
     requires: ['p_ascensao_facilitada', 'p_multiverso_pessoal'],
     position: { x: 50, y: 8 },
     effect: { type: 'global_mult', value: 150 }
+  },
+
+  /* ------------------------------------------------------------
+   * Expansão v2 da árvore celestial — continua além do Concílio.
+   * ------------------------------------------------------------ */
+  {
+    id: 'p_arquivo_das_ascensoes',
+    name: 'Arquivo das Ascensões',
+    icon: '📚',
+    description: 'Cada ascensão realizada passa a valer um pouco mais de bônus permanente.',
+    cost: 100,
+    requires: ['p_concilio_dos_ascendentes'],
+    position: { x: 30, y: 9 },
+    effect: { type: 'ascension_bonus_add', value: 1 } // +1 ponto percentual por ascensão (soma ao bônus base de 3%)
+  },
+  {
+    id: 'p_clique_transcendental',
+    name: 'Clique Transcendental',
+    icon: '☄️',
+    description: 'O clique deixa de ser apenas manual e passa a ecoar em escala celestial.',
+    cost: 100,
+    requires: ['p_concilio_dos_ascendentes'],
+    position: { x: 70, y: 9 },
+    effect: { type: 'click_mult', value: 150 }
+  },
+  {
+    id: 'p_producao_transcendental',
+    name: 'Produção Transcendental',
+    icon: '🌠',
+    description: 'A energia celestial passa a alimentar diretamente todos os produtores.',
+    cost: 150,
+    requires: ['p_arquivo_das_ascensoes', 'p_clique_transcendental'],
+    position: { x: 50, y: 10 },
+    effect: { type: 'global_mult', value: 200 }
+  },
+  {
+    id: 'p_sinergia_universal',
+    name: 'Sinergia Universal',
+    icon: '🔗',
+    description: 'Reforça todas as sinergias entre produtores adquiridas via upgrades normais.',
+    cost: 200,
+    requires: ['p_producao_transcendental'],
+    position: { x: 30, y: 11 },
+    effect: { type: 'global_mult', value: 120 }
+  },
+  {
+    id: 'p_categoria_transcendental',
+    name: 'Ordem das Categorias',
+    icon: '🗂️',
+    description: 'Todos os bônus de categoria de produtores ficam ainda mais fortes.',
+    cost: 200,
+    requires: ['p_producao_transcendental'],
+    position: { x: 70, y: 11 },
+    effect: { type: 'category_mult', category: 'transcendental', value: 100 }
+  },
+  {
+    id: 'p_eco_permanente',
+    name: 'Eco Permanente',
+    icon: '🔊',
+    description: 'O eco das ascensões passadas nunca mais se apaga.',
+    cost: 300,
+    requires: ['p_sinergia_universal', 'p_categoria_transcendental'],
+    position: { x: 50, y: 12 },
+    effect: { type: 'offline_mult', value: 50 }
+  },
+  {
+    id: 'p_portal_permanente',
+    name: 'Portal Permanente',
+    icon: '🌀',
+    description: 'Eventos especiais aparecem com muito mais frequência e duram muito mais.',
+    cost: 350,
+    requires: ['p_eco_permanente'],
+    position: { x: 30, y: 13 },
+    effect: { type: 'event_chance', value: 100 }
+  },
+  {
+    id: 'p_regencia_celestial',
+    name: 'Regência Celestial',
+    icon: '🏛️',
+    description: 'Você agora rege parte da própria estrutura do Régis.',
+    cost: 350,
+    requires: ['p_eco_permanente'],
+    position: { x: 70, y: 13 },
+    effect: { type: 'global_mult', value: 250 }
+  },
+  {
+    id: 'p_transcendencia_final',
+    name: 'Transcendência',
+    icon: '🌟',
+    description: 'O novo topo da árvore celestial. Além dela, só a Ressonância Infinita.',
+    cost: 500,
+    requires: ['p_portal_permanente', 'p_regencia_celestial'],
+    position: { x: 50, y: 14 },
+    effect: { type: 'global_mult', value: 300 }
   }
 ];
+
+/**
+ * Upgrade celestial repetível ("infinito"): desbloqueado ao concluir a
+ * árvore inteira, pode ser comprado indefinidamente para que sempre exista
+ * uma forma de progredir com Régis Celestiais mesmo depois de terminar toda
+ * a árvore de nós únicos. Custo cresce geometricamente a cada nível.
+ */
+const PRESTIGE_INFINITE_UPGRADE = {
+  id: 'p_infinito_ressonancia',
+  name: 'Ressonância Celestial Infinita',
+  icon: '♾️',
+  description: 'Aumenta permanentemente toda a produção. Pode ser comprada repetidamente, sem limite.',
+  requiresNodeId: 'p_transcendencia_final',
+  baseCost: 100,
+  costGrowth: 1.35,
+  effectPerLevel: { type: 'global_mult', value: 5 } // +5% de produção global por nível
+};

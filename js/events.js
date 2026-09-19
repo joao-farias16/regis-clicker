@@ -66,7 +66,12 @@ const EventsLogic = {
     if (eventDef.id === 'regis_dourado') gameState.stats.goldenClicked++;
     if (eventDef.id === 'regis_cosmico') gameState.flags.foundCosmic = true;
 
-    Notifications.push(rolled.text, 'event');
+    const notificationText = rolled.text.replace(
+      '{duration}',
+      Math.round(rolled.effect.duration * Economy.getGoldenDurationMultiplier())
+    );
+
+    Notifications.push(notificationText, 'event');
     AudioFX.play('event');
     this.dismissCurrent();
     AchievementsLogic.checkAll();

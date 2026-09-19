@@ -24,13 +24,29 @@ const Economy = {
     return [...this.getActiveUpgradeEffects(), ...this.getActivePrestigeEffects()];
   },
 
-  /** Soma o campo "value" de todos os efeitos de um determinado tipo (e opcionalmente prédio específico) */
-  sumEffect(type, buildingId = null) {
+  /** Soma o campo "value" de todos os efeitos de um determinado tipo (e opcionalmente prédio/categoria específicos) */
+  sumEffect(type, buildingId = null, category = null) {
     let sum = 0;
     for (const eff of this.getAllEffects()) {
       if (eff.type !== type) continue;
       if (buildingId && eff.building && eff.building !== buildingId) continue;
+      if (category && eff.category && eff.category !== category) continue;
       sum += eff.value;
+    }
+    return sum;
+  },
+
+  /**
+   * Soma de bônus de sinergia (%) aplicáveis a um produtor específico.
+   * effect.type === 'synergy_mult': { building, synergyWith, valuePerUnit }
+   * concede +valuePerUnit% na produção de "building" para cada unidade possuída de "synergyWith".
+   */
+  getSynergyBonusPercent(buildingId) {
+    let sum = 0;
+    for (const eff of this.getAllEffects()) {
+      if (eff.type !== 'synergy_mult' || eff.building !== buildingId) continue;
+      const ownedOther = StateGetters.buildingOwned(eff.synergyWith);
+      sum += eff.valuePerUnit * ownedOther;
     }
     return sum;
   },
@@ -48,7 +64,12 @@ const Economy = {
   },
 
   getBuildingMultiplier(buildingId) {
-    const pct = this.sumEffect('building_mult', buildingId);
+    const def = BUILDINGS_DATA.find(b => b.id === buildingId);
+    let pct = this.sumEffect('building_mult', buildingId);
+    if (def && def.category) {
+      pct += this.sumEffect('category_mult', null, def.category);
+    }
+    pct += this.getSynergyBonusPercent(buildingId);
     return 1 + pct / 100;
   },
 
@@ -64,8 +85,15 @@ const Economy = {
   getGlobalProductionMultiplier() {
     const pctGlobal = this.sumEffect('global_mult');
     const pctAll = this.sumEffect('all_mult');
-    const ascensionBonus = 1 + gameState.prestige.ascensions * 0.02; // +2% de produção por ascensão feita
-    return (1 + pctGlobal / 100) * (1 + pctAll / 100) * ascensionBonus * this.getMilkBonusMultiplier();
+    // v2: +3% por ascensão (antes 2%), mais qualquer bônus adicional de
+    // upgrades celestiais como "Arquivo das Ascensões" — compensa o novo
+    // requisito de ascensão, que ficou mais exigente (ver
+    // PrestigeLogic.getEffectiveDivisor).
+    const bonusPerAscensionPct = 3 + this.sumEffect('ascension_bonus_add');
+    const ascensionBonus = 1 + gameState.prestige.ascensions * (bonusPerAscensionPct / 100);
+    // upgrade celestial repetível pós-árvore (progressão sem limite no late game)
+    const infiniteBonus = 1 + (gameState.prestige.infiniteLevel || 0) * (PRESTIGE_INFINITE_UPGRADE.effectPerLevel.value / 100);
+    return (1 + pctGlobal / 100) * (1 + pctAll / 100) * ascensionBonus * infiniteBonus * this.getMilkBonusMultiplier();
   },
 
   /** Multiplicador multiplicativo de todos os buffs de produção ativos */

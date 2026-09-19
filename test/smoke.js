@@ -190,6 +190,108 @@ StateGetters.setRegis(Decimal.ZERO);
 var zeroBuy = BuildingsLogic.buy('concilio', 'max');
 __assert(!zeroBuy.success, 'compra sem saldo é corretamente rejeitada');
 
+/* ===================== TESTES DA ATUALIZAÇÃO v2 ===================== */
+
+// 18) 28 produtores no total (20 originais + 8 transcendentais), todos com categoria
+__assert(BUILDINGS_DATA.length === 28, 'existem 28 produtores no total após a expansão v2');
+__assert(BUILDINGS_DATA.every(b => !!b.category), 'todos os produtores possuem uma categoria definida');
+__assert(BUILDINGS_DATA.find(b => b.id === 'eco_do_criador') !== undefined, 'produtor transcendental "Eco do Criador" existe');
+__assert(BUILDINGS_DATA.find(b => b.id === 'cliqueiro').baseCost === 15, 'produtor original "Cliqueiro" manteve seu custo base');
+
+// 19) categoria e sinergia afetam a produção corretamente
+gameState = createDefaultState();
+BUILDINGS_DATA.forEach(b => gameState.buildings[b.id] = { owned: 0 });
+StateGetters.addRegis(Decimal.fromNumber(1e10));
+BuildingsLogic.buy('cliqueiro', 10);
+BuildingsLogic.buy('fabrica', 5);
+var fabricaProdSemSinergia = Economy.getBuildingProductionPerSecond('fabrica');
+gameState.upgradesBought['sinergia_cliqueiro_fabrica'] = true;
+var fabricaProdComSinergia = Economy.getBuildingProductionPerSecond('fabrica');
+__assert(fabricaProdComSinergia.gt(fabricaProdSemSinergia), 'upgrade de sinergia aumenta a produção do produtor-alvo');
+delete gameState.upgradesBought['sinergia_cliqueiro_fabrica'];
+
+var raizProdSemCategoria = Economy.getBuildingProductionPerSecond('cliqueiro');
+gameState.upgradesBought['categoria_raiz'] = true;
+var raizProdComCategoria = Economy.getBuildingProductionPerSecond('cliqueiro');
+__assert(raizProdComCategoria.gt(raizProdSemCategoria), 'upgrade de categoria aumenta a produção de todos os produtores da categoria');
+
+// 20) rebalanceamento de prestígio: o requisito cresce a cada ascensão
+gameState = createDefaultState();
+BUILDINGS_DATA.forEach(b => gameState.buildings[b.id] = { owned: 0 });
+var divisorAscensao0 = PrestigeLogic.getEffectiveDivisor(0);
+var divisorAscensao1 = PrestigeLogic.getEffectiveDivisor(1);
+var divisorAscensao5 = PrestigeLogic.getEffectiveDivisor(5);
+__assert(divisorAscensao1 > divisorAscensao0, 'o divisor de prestígio cresce após a 1ª ascensão');
+__assert(divisorAscensao5 > divisorAscensao1, 'o divisor de prestígio continua crescendo em ascensões seguintes');
+
+// 21) o exploit original está corrigido: totalRegisEarned (vitalício) não é
+// mais suficiente sozinho — o ganho depende do Régis produzido NESTA era.
+gameState.totalRegisEarned = Decimal.fromNumber(5e13).toJSON(); // vitalício alto
+gameState.totalRegisThisAscension = Decimal.ZERO.toJSON();       // mas nada produzido desde o reset
+var gainSemProgresso = PrestigeLogic.calculateCelestialGain();
+__assert(gainSemProgresso.isZero(), 'sem produção nesta era, o ganho de prestígio é zero mesmo com total vitalício alto (exploit corrigido)');
+
+gameState.totalRegisThisAscension = Decimal.fromNumber(5e13).toJSON();
+var gainComProgresso = PrestigeLogic.calculateCelestialGain();
+__assert(gainComProgresso.gt(Decimal.ZERO), 'com produção real nesta era, o ganho de prestígio volta a ser positivo');
+
+// 22) duas ascensões seguidas: a segunda exige mais Régis-desta-era que a primeira para o mesmo ganho
+gameState.prestige.ascensions = 0;
+var precisaEra0 = PrestigeLogic.getEffectiveDivisor();
+gameState.prestige.ascensions = 1;
+var precisaEra1 = PrestigeLogic.getEffectiveDivisor();
+__assert(precisaEra1 > precisaEra0, 'a 2ª ascensão exige mais Régis-desta-era que a 1ª para o mesmo ganho — corrige o exploit de ascender repetidamente');
+
+// 23) upgrade celestial repetível (Ressonância Infinita)
+gameState = createDefaultState();
+BUILDINGS_DATA.forEach(b => gameState.buildings[b.id] = { owned: 0 });
+__assert(!PrestigeLogic.isInfiniteUnlocked(), 'Ressonância Infinita começa bloqueada');
+gameState.prestige.permanentUpgrades['p_transcendencia_final'] = true;
+__assert(PrestigeLogic.isInfiniteUnlocked(), 'Ressonância Infinita desbloqueia após completar a árvore até "Transcendência"');
+gameState.prestige.celestial = Decimal.fromNumber(1000).toJSON();
+var infiniteBuy1 = PrestigeLogic.buyInfiniteLevel();
+__assert(infiniteBuy1.success, 'primeira compra da Ressonância Infinita bem-sucedida');
+var custoNivel2 = PrestigeLogic.getInfiniteCost();
+var infiniteBuy2 = PrestigeLogic.buyInfiniteLevel();
+__assert(infiniteBuy2.success, 'segunda compra da Ressonância Infinita bem-sucedida');
+__assert(gameState.prestige.infiniteLevel === 2, 'nível da Ressonância Infinita incrementa corretamente e não tem limite superior fixo');
+var custoNivel3 = PrestigeLogic.getInfiniteCost();
+__assert(custoNivel3 > custoNivel2, 'o custo da Ressonância Infinita cresce a cada nível');
+
+// 24) conquistas novas: geradas corretamente e sem duplicar IDs
+var idsUnicos = {};
+var duplicado = false;
+ACHIEVEMENTS_DATA.forEach(a => {
+  if (idsUnicos[a.id]) duplicado = true;
+  idsUnicos[a.id] = true;
+});
+__assert(!duplicado, 'nenhum ID de conquista duplicado após a expansão v2');
+__assert(ACHIEVEMENTS_DATA.length > 130, 'a quantidade total de conquistas aumentou significativamente na v2 (' + ACHIEVEMENTS_DATA.length + ' encontradas)');
+__assert(ACHIEVEMENTS_DATA.some(a => a.id === 'arvore_completa'), 'nova conquista "Transcendido" (árvore completa) existe');
+
+gameState.buildings = {};
+BUILDINGS_DATA.forEach(b => gameState.buildings[b.id] = { owned: 1 });
+AchievementsLogic.checkAll();
+__assert(gameState.achievementsUnlocked['colecionador_de_produtores'] === true, 'conquista "Um Pouco de Tudo" desbloqueia ao possuir todos os 28 produtores');
+
+// 25) save antigo (formato v1, sem os campos novos) continua carregando sem erros
+var saveAntigoV1 = {
+  saveVersion: 1,
+  regis: Decimal.fromNumber(500).toJSON(),
+  totalRegisEarned: Decimal.fromNumber(500).toJSON(),
+  buildings: { cliqueiro: { owned: 3 } },
+  upgradesBought: {},
+  achievementsUnlocked: {},
+  prestige: { celestial: Decimal.ZERO.toJSON(), ascensions: 0, permanentUpgrades: {} }
+  // note: sem totalRegisThisAscension, sem prestige.infiniteLevel, sem account, sem stats novos
+};
+Save._applyLoadedState(saveAntigoV1);
+__assert(StateGetters.buildingOwned('cliqueiro') === 3, 'save v1 antigo preserva produtores existentes');
+__assert(gameState.prestige.infiniteLevel === 0, 'save v1 antigo recebe prestige.infiniteLevel padrão (0) sem erros');
+__assert(gameState.buildings['eco_do_criador'] !== undefined, 'save v1 antigo recebe os novos produtores transcendentais com 0 unidades');
+__assert(gameState.account && gameState.account.linkedUid === null, 'save v1 antigo recebe o novo campo "account" com valor padrão seguro');
+__assert(gameState.saveVersion === 2, 'save antigo é migrado para a versão atual (2)');
+
 console.log('\\nTODOS OS TESTES DE FUMAÇA PASSARAM (' + __passCount() + ' verificações).');
 `;
 

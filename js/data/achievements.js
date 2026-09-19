@@ -31,6 +31,11 @@ const PLAYTIME_THRESHOLDS_MIN = [5, 30, 60, 180, 600, 1440];
 const GOLDEN_THRESHOLDS = [1, 10, 50, 100];
 const RARE_EVENT_THRESHOLDS = [1, 5, 20];
 const COMBO_THRESHOLDS = [10, 25, 50, 100];
+// v2 — novas categorias de conquistas
+const CPS_THRESHOLDS = [10, 100, 1000, 1e4, 1e5, 1e6, 1e8, 1e10, 1e13, 1e16, 1e20];
+const CELESTIAL_THRESHOLDS = [1, 5, 10, 25, 50, 100, 250, 500, 1000];
+const INFINITE_LEVEL_THRESHOLDS = [1, 5, 10, 25, 50, 100];
+const ANY_BUILDING_COUNT_THRESHOLDS = [100, 500, 1000, 2500];
 
 const GENERATED_ACHIEVEMENTS = [
   ...genThresholdAchievements('regis_total', 'totalRegis', REGIS_TOTAL_THRESHOLDS,
@@ -69,7 +74,7 @@ const GENERATED_ACHIEVEMENTS = [
     (t) => `Combo x${t}`,
     (t) => `Alcance um combo de cliques de x${t}.`),
 
-  // primeira compra de cada produtor
+  // primeira compra de cada produtor (inclui os 8 produtores transcendentais da v2)
   ...BUILDINGS_DATA.map((b, i) => ({
     id: `primeiro_${b.id}`,
     name: `Primeiro ${b.name}`,
@@ -77,6 +82,32 @@ const GENERATED_ACHIEVEMENTS = [
     icon: b.icon,
     category: 'buildingFirst',
     condition: { type: 'buildingFirst', building: b.id }
+  })),
+
+  ...genThresholdAchievements('cps', 'cpsAtLeast', CPS_THRESHOLDS,
+    (t) => `${formatNumber(Decimal.fromNumber(t), { decimals: 0 })} Régis/s`,
+    (t) => `Alcance uma produção de ${formatNumber(Decimal.fromNumber(t), { decimals: 0 })} Régis por segundo.`),
+
+  ...genThresholdAchievements('celestial', 'celestialEarned', CELESTIAL_THRESHOLDS,
+    (t) => `${t} Régis Celestiais`,
+    (t) => `Acumule ${t} Régis Celestiais ao longo do jogo (mesmo que já tenha gasto parte deles).`),
+
+  ...genThresholdAchievements('infinito', 'infiniteLevel', INFINITE_LEVEL_THRESHOLDS,
+    (t) => `Ressonância nível ${t}`,
+    (t) => `Alcance o nível ${t} da Ressonância Celestial Infinita.`),
+
+  ...genThresholdAchievements('mestre_produtor', 'anyBuildingAtLeast', ANY_BUILDING_COUNT_THRESHOLDS,
+    (t) => `${t} de um mesmo produtor`,
+    (t) => `Possua ${t} unidades de um único tipo de produtor.`),
+
+  // conquistas de conclusão por categoria de produtor
+  ...Object.keys(BUILDING_CATEGORY_LABELS).map((cat) => ({
+    id: `categoria_completa_${cat}`,
+    name: `${BUILDING_CATEGORY_LABELS[cat]}: Completo`,
+    description: `Possua ao menos 1 unidade de cada produtor da categoria "${BUILDING_CATEGORY_LABELS[cat]}".`,
+    icon: '📦',
+    category: 'categoria',
+    condition: { type: 'categoryOwned', category: cat }
   }))
 ];
 
@@ -200,6 +231,64 @@ const HANDCRAFTED_ACHIEVEMENTS = [
     icon: '💥',
     category: 'especial',
     condition: { type: 'totalRegis', amount: 1e36 }
+  },
+
+  /* ---------------- v2: expansão de conteúdo ---------------- */
+  {
+    id: 'colecionador_de_produtores',
+    name: 'Um Pouco de Tudo',
+    description: 'Possua ao menos 1 unidade de cada um dos 28 produtores existentes.',
+    icon: '🧰',
+    category: 'especial',
+    condition: { type: 'allBuildingsOwned' }
+  },
+  {
+    id: 'arvore_completa',
+    name: 'Transcendido',
+    description: 'Complete toda a árvore de upgrades permanentes de prestígio.',
+    icon: '🌟',
+    category: 'prestigio',
+    condition: { type: 'manual', key: 'prestigeTreeComplete' }
+  },
+  {
+    id: 'ressonancia_iniciada',
+    name: 'Além da Árvore',
+    description: 'Compre o primeiro nível da Ressonância Celestial Infinita.',
+    icon: '♾️',
+    category: 'prestigio',
+    condition: { type: 'infiniteLevel', amount: 1 }
+  },
+  {
+    id: 'sinergia_descoberta',
+    name: 'Trabalho em Equipe',
+    description: 'Compre um upgrade de sinergia entre produtores.',
+    icon: '🔗',
+    category: 'especial',
+    condition: { type: 'manual', key: 'boughtSynergyUpgrade' }
+  },
+  {
+    id: 'conta_criada',
+    name: 'Identidade Régisiana',
+    description: 'Crie uma conta ou faça login no Régis Clicker.',
+    icon: '🪪',
+    category: 'especial',
+    condition: { type: 'manual', key: 'loggedIn' }
+  },
+  {
+    id: 'produtor_transcendental',
+    name: 'Além da Compreensão',
+    description: 'Compre seu primeiro produtor da categoria Transcendental.',
+    icon: '🌈',
+    category: 'especial',
+    condition: { type: 'categoryOwned', category: 'transcendental' }
+  },
+  {
+    id: 'segunda_ascensao_dificil',
+    name: 'A Segunda Vez é Pior',
+    description: 'Complete sua segunda ascensão depois do rebalanceamento — prova de que valeu a pena reconstruir.',
+    icon: '🔁',
+    category: 'prestigio',
+    condition: { type: 'ascensions', amount: 2 }
   }
 ];
 

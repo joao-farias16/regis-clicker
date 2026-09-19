@@ -50,7 +50,7 @@
             <div id="regis-click-area">
               <div id="event-entity-container"></div>
               <button id="regis-button" aria-label="Clique no Régis para gerar mais Régis">
-                RÉGIS
+                <img src="assets/regis.png" alt="Régis">
               </button>
               <div id="click-popups" aria-hidden="true"></div>
             </div>
@@ -86,6 +86,13 @@
   </div>
 
   <!-- ordem importa: dados e utilitários primeiro, depois lógica, depois UI e main -->
+  <!-- Login (v2) — firebase-config.js define as credenciais (opcional; sem
+       elas o jogo roda 100% em modo convidado). O bridge é um módulo ES
+       separado para isolar o SDK do Firebase do resto do jogo (scripts
+       clássicos) e para nunca bloquear o carregamento caso a rede falhe. -->
+  <script src="js/firebase-config.js"></script>
+  <script type="module" src="js/firebase-bridge.mjs"></script>
+
   <script src="js/utils.js"></script>
   <script src="js/numbers.js"></script>
   <script src="js/data/buildings.js"></script>
@@ -107,6 +114,7 @@
   <script src="js/offline.js"></script>
   <script src="js/save.js"></script>
   <script src="js/settings.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

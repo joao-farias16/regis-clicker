@@ -174,7 +174,10 @@ const UI = {
       offline: 'Upgrades Offline',
       eventos: 'Upgrades de Eventos',
       secreto: 'Upgrades Secretos',
-      prestigio: 'Upgrades de Prestígio'
+      prestigio: 'Upgrades de Prestígio',
+      categoria: 'Bônus de Categoria',
+      sinergia: 'Sinergias entre Produtores',
+      lategame: 'Upgrades de Late Game'
     };
 
     if (available.length === 0) {
@@ -216,27 +219,64 @@ const UI = {
   renderPrestige() {
     const gain = PrestigeLogic.calculateCelestialGain();
     const canAscend = gain.gt(Decimal.ZERO);
+    const effectiveDivisor = PrestigeLogic.getEffectiveDivisor();
+    const progressThisEra = Decimal.from(gameState.totalRegisThisAscension);
     this.els.tabPrestigio.innerHTML = `
       <div class="prestige-header">
         <h2>Ascensão</h2>
         <p>Régis Celestiais: <strong>${formatNumber(StateGetters.celestial())}</strong></p>
         <p>Nível de Prestígio: <strong>${gameState.prestige.ascensions}</strong></p>
+        <p class="prestige-era-progress">Régis produzidos desde a última ascensão: <strong>${formatNumber(progressThisEra)}</strong></p>
         <div class="prestige-gain-box">
           ${canAscend
             ? `<p>Você receberá: <strong>+${formatNumber(gain)} ${PRESTIGE_CONFIG.currencyNamePlural}</strong></p>
                <button id="btn-ascend" class="btn-primary">ASCENDER</button>`
-            : `<p>Produza mais Régis para poder ascender. (Meta atual: ${formatNumber(Decimal.fromNumber(PRESTIGE_CONFIG.divisor))} Régis totais)</p>`
+            : `<p>Produza mais Régis para poder ascender. (Meta atual: ${formatNumber(Decimal.fromNumber(effectiveDivisor))} Régis produzidos desde a última ascensão)</p>`
           }
+          <p class="prestige-hint">O requisito de ascensão cresce a cada ascensão já realizada — por isso é calculado sobre o Régis produzido <em>desde a última ascensão</em>, e não sobre o total vitalício.</p>
         </div>
       </div>
       <h3>Árvore de Prestígio</h3>
       <div id="prestige-tree" class="prestige-tree"></div>
+      <div id="prestige-infinite"></div>
     `;
 
     const btn = document.getElementById('btn-ascend');
     if (btn) btn.addEventListener('click', () => this.confirmAscend());
 
     this.renderPrestigeTree();
+    this.renderPrestigeInfinite();
+  },
+
+  renderPrestigeInfinite() {
+    const container = document.getElementById('prestige-infinite');
+    if (!container) return;
+    const unlocked = PrestigeLogic.isInfiniteUnlocked();
+    if (!unlocked) {
+      container.innerHTML = `
+        <h3>Ressonância Celestial Infinita</h3>
+        <p class="empty-hint">Complete a árvore de prestígio (até "Transcendência") para desbloquear uma forma de progressão celestial sem limite.</p>
+      `;
+      return;
+    }
+    const level = PrestigeLogic.getInfiniteLevel();
+    const cost = PrestigeLogic.getInfiniteCost();
+    const affordable = StateGetters.celestial().gte(cost);
+    container.innerHTML = `
+      <h3>Ressonância Celestial Infinita</h3>
+      <div class="infinite-node-card">
+        <span class="infinite-icon">${PRESTIGE_INFINITE_UPGRADE.icon}</span>
+        <div class="infinite-body">
+          <p><strong>${PRESTIGE_INFINITE_UPGRADE.name}</strong> — nível atual: ${level}</p>
+          <p>${PRESTIGE_INFINITE_UPGRADE.description} (atualmente: +${(level * PRESTIGE_INFINITE_UPGRADE.effectPerLevel.value).toFixed(0)}% de produção)</p>
+          <button class="btn-primary" id="btn-buy-infinite" ${affordable ? '' : 'disabled'}>
+            COMPRAR PRÓXIMO NÍVEL — ${formatNumber(cost)} 🌠
+          </button>
+        </div>
+      </div>
+    `;
+    const btn = document.getElementById('btn-buy-infinite');
+    if (btn) btn.addEventListener('click', () => PrestigeLogic.buyInfiniteLevel());
   },
 
   renderPrestigeTree() {
@@ -395,6 +435,8 @@ const UI = {
   refreshSettings() {
     if (!this.els.tabConfiguracoes) return;
     const s = gameState.settings;
+    const fsSupported = SettingsLogic.isFullscreenSupported();
+    const fsActive = SettingsLogic.isFullscreenActive();
     this.els.tabConfiguracoes.innerHTML = `
       <div class="settings-list">
         ${this.settingToggleHtml('sound', 'Som', s.sound)}
@@ -409,7 +451,12 @@ const UI = {
             <button class="btn-secondary ${s.theme === 'light' ? 'active' : ''}" data-action="theme" data-theme="light">Claro</button>
           </div>
         </div>
+        <div class="setting-row">
+          <span>Tela cheia ${fsSupported ? '' : '(indisponível neste navegador)'}</span>
+          <button class="toggle-btn ${fsActive ? 'on' : 'off'}" data-action="toggle-fullscreen" ${fsSupported ? '' : 'disabled'}>${fsActive ? 'SAIR' : 'ATIVAR'}</button>
+        </div>
       </div>
+      ${this.renderAccountSection()}
     `;
   },
 
@@ -575,6 +622,123 @@ const UI = {
     document.getElementById('modal-start').addEventListener('click', () => {
       gameState.flags.seenIntro = true;
       Save.save();
+      this.closeModal();
+    });
+  },
+
+  /* ---------------- LOGIN / CONTA (v2) ---------------- */
+
+  renderAccountSection() {
+    const status = Auth.status;
+    let body = '';
+
+    if (!Auth.firebaseConfigured) {
+      body = `
+        <p class="account-status">Modo convidado — seu progresso é salvo apenas neste navegador (localStorage), exatamente como antes.</p>
+        <p class="account-hint">O sistema de login está pronto no código, mas precisa de uma configuração gratuita do Firebase para ser ativado. Veja o README.md ("Como ativar o login").</p>
+      `;
+    } else if (status === 'authenticated' && Auth.currentUser) {
+      body = `
+        <p class="account-status">Conectado como <strong>${Auth.currentUser.email}</strong></p>
+        <button class="btn-secondary" data-action="auth-logout">SAIR DA CONTA</button>
+      `;
+    } else if (status === 'idle' || status === 'idle-form') {
+      body = `<p class="account-status">Verificando sessão...</p>`;
+    } else {
+      body = `
+        <p class="account-status">Você está jogando como convidado.</p>
+        <button class="btn-primary" data-action="auth-login">ENTRAR / CRIAR CONTA</button>
+      `;
+    }
+
+    return `
+      <h3 class="settings-section-title">Conta</h3>
+      <div class="account-section">${body}</div>
+    `;
+  },
+
+  showLoginModal() {
+    this._loginMode = 'signin'; // 'signin' | 'signup'
+    this.renderLoginModalContent();
+  },
+
+  refreshLoginModal() {
+    if (this.els.modalOverlay.classList.contains('hidden')) return;
+    this.renderLoginModalContent();
+  },
+
+  renderLoginModalContent() {
+    const mode = this._loginMode || 'signin';
+    const loading = Auth.status === 'loading';
+    const error = Auth.status === 'error' ? Auth.errorMessage : null;
+
+    this.openModal(`
+      <h2>${mode === 'signin' ? 'Entrar' : 'Criar Conta'}</h2>
+      ${!Auth.firebaseConfigured ? '<p>O login ainda não foi configurado neste jogo. Veja o README.md para ativá-lo.</p>' : `
+        <form id="auth-form" class="auth-form">
+          <input type="email" id="auth-email" placeholder="E-mail" required autocomplete="email" />
+          <input type="password" id="auth-password" placeholder="Senha (mín. 6 caracteres)" required autocomplete="${mode === 'signin' ? 'current-password' : 'new-password'}" minlength="6" />
+          ${error ? `<p class="auth-error">${error}</p>` : ''}
+          <button type="submit" class="btn-primary" ${loading ? 'disabled' : ''}>${loading ? 'Aguarde...' : (mode === 'signin' ? 'ENTRAR' : 'CRIAR CONTA')}</button>
+        </form>
+        <p class="auth-switch">
+          ${mode === 'signin' ? 'Ainda não tem conta?' : 'Já tem conta?'}
+          <button class="link-btn" id="auth-switch-mode">${mode === 'signin' ? 'Criar conta' : 'Entrar'}</button>
+        </p>
+      `}
+      <div class="modal-actions">
+        <button class="btn-secondary" id="modal-cancel">CONTINUAR SEM CONTA</button>
+      </div>
+    `);
+
+    document.getElementById('modal-cancel').addEventListener('click', () => this.closeModal());
+
+    const form = document.getElementById('auth-form');
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('auth-email').value.trim();
+        const password = document.getElementById('auth-password').value;
+        const result = mode === 'signin'
+          ? await Auth.signIn(email, password)
+          : await Auth.signUp(email, password);
+        if (result.success) {
+          this.closeModal();
+        }
+        // erro já é refletido via Auth.status + refreshLoginModal()
+      });
+    }
+    const switchBtn = document.getElementById('auth-switch-mode');
+    if (switchBtn) {
+      switchBtn.addEventListener('click', () => {
+        this._loginMode = mode === 'signin' ? 'signup' : 'signin';
+        Auth.status = 'idle-form';
+        Auth.errorMessage = null;
+        this.renderLoginModalContent();
+      });
+    }
+  },
+
+  showCloudSyncModal(cloudData, updatedAt) {
+    const cloudRegis = cloudData && cloudData.regis ? formatNumber(Decimal.from(cloudData.regis)) : '0';
+    const localRegis = formatNumber(StateGetters.regis());
+    const dateStr = updatedAt ? new Date(updatedAt).toLocaleString('pt-BR') : 'desconhecida';
+    this.openModal(`
+      <h2>Save na Nuvem Encontrado</h2>
+      <p>Encontramos um save salvo na nuvem para esta conta (última sincronização: ${dateStr}).</p>
+      <p>Régis na nuvem: <strong>${cloudRegis}</strong><br>Régis neste navegador: <strong>${localRegis}</strong></p>
+      <p>Qual save você quer manter? A outra versão será substituída.</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btn-keep-local">MANTER ESTE (LOCAL)</button>
+        <button class="btn-primary" id="btn-use-cloud">USAR O DA NUVEM</button>
+      </div>
+    `);
+    document.getElementById('btn-keep-local').addEventListener('click', () => {
+      Auth.keepLocalSave();
+      this.closeModal();
+    });
+    document.getElementById('btn-use-cloud').addEventListener('click', () => {
+      Auth.adoptCloudSave(cloudData);
       this.closeModal();
     });
   }

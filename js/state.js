@@ -3,7 +3,11 @@
  * Tudo que precisa ser salvo mora aqui.
  */
 
-const SAVE_VERSION = 1;
+// v1 → v2: adiciona produtores transcendentais, upgrades/conquistas/prestígio
+// expandidos, nível celestial infinito e metadados de conta. Todos os campos
+// novos recebem valores padrão via ensureStateIntegrity(), então saves v1
+// continuam carregando normalmente — nada é perdido.
+const SAVE_VERSION = 2;
 
 function createDefaultState() {
   return {
@@ -41,7 +45,8 @@ function createDefaultState() {
     prestige: {
       celestial: Decimal.ZERO.toJSON(),
       ascensions: 0,
-      permanentUpgrades: {} // { [prestigeNodeId]: true }
+      permanentUpgrades: {}, // { [prestigeNodeId]: true }
+      infiniteLevel: 0 // nível do upgrade celestial repetível (pós-árvore), progressão sem limite
     },
 
     // buffs ativos: [{ id, name, icon, type, value, endsAt, sourceEventId }]
@@ -64,7 +69,8 @@ function createDefaultState() {
       maxClick: Decimal.ZERO.toJSON(),
       maxCombo: 0,
       gameStartedAt: Date.now(),
-      lastSeenAt: Date.now()
+      lastSeenAt: Date.now(),
+      totalCelestialEarned: Decimal.ZERO.toJSON() // lifetime, nunca decresce mesmo ao gastar celestiais
     },
 
     // flags diversos / segredos
@@ -74,7 +80,9 @@ function createDefaultState() {
       exportedSave: false,
       importedSave: false,
       foundCosmic: false,
-      noBuildingsFlag: true // vira false assim que compra o primeiro produtor
+      noBuildingsFlag: true, // vira false assim que compra o primeiro produtor
+      boughtSynergyUpgrade: false,
+      hasLoggedIn: false
     },
 
     // configurações
@@ -84,7 +92,16 @@ function createDefaultState() {
       animations: true,
       compactNumbers: true,
       highContrast: false,
-      theme: 'dark'
+      theme: 'dark',
+      fullscreen: false
+    },
+
+    // conta/login (v2) — nenhuma credencial é armazenada aqui, apenas metadados
+    // de sincronização. O estado de autenticação em si vive em Auth.currentUser
+    // (memória, nunca salvo em localStorage nem no save exportável).
+    account: {
+      linkedUid: null,
+      lastCloudSyncAt: null
     },
 
     // metadados de tempo
@@ -95,18 +112,34 @@ function createDefaultState() {
 let gameState = createDefaultState();
 
 /** Garante que produtores/estruturas novas existam mesmo em saves antigos migrados. */
+/**
+ * Garante que saves antigos (de versões anteriores do jogo) ganhem, de forma
+ * segura, todos os campos novos introduzidos em atualizações posteriores —
+ * sem jamais apagar o progresso existente. Sempre que um novo sistema for
+ * adicionado ao gameState, seu valor padrão deve ser garantido aqui.
+ */
 function ensureStateIntegrity(state) {
+  // novos produtores (ex.: os 8 produtores "transcendentais" da v2) em saves antigos
   BUILDINGS_DATA.forEach(b => {
     if (!state.buildings[b.id]) state.buildings[b.id] = { owned: 0 };
   });
-  if (!state.prestige) state.prestige = { celestial: Decimal.ZERO.toJSON(), ascensions: 0, permanentUpgrades: {} };
+  if (!state.prestige) state.prestige = { celestial: Decimal.ZERO.toJSON(), ascensions: 0, permanentUpgrades: {}, infiniteLevel: 0 };
   if (!state.prestige.permanentUpgrades) state.prestige.permanentUpgrades = {};
+  if (typeof state.prestige.infiniteLevel !== 'number') state.prestige.infiniteLevel = 0;
+  if (!state.totalRegisThisAscension) state.totalRegisThisAscension = state.regis || Decimal.ZERO.toJSON();
   if (!state.challenges) state.challenges = {};
   if (!state.collectiblesUnlocked) state.collectiblesUnlocked = {};
   if (!state.activeBuffs) state.activeBuffs = [];
   if (!state.flags) state.flags = createDefaultState().flags;
   if (!state.settings) state.settings = createDefaultState().settings;
+  if (typeof state.settings.fullscreen !== 'boolean') state.settings.fullscreen = false;
   if (!state.stats) state.stats = createDefaultState().stats;
+  if (!state.stats.totalCelestialEarned) state.stats.totalCelestialEarned = state.prestige.celestial || Decimal.ZERO.toJSON();
+  if (typeof state.flags.boughtSynergyUpgrade !== 'boolean') state.flags.boughtSynergyUpgrade = false;
+  if (typeof state.flags.hasLoggedIn !== 'boolean') state.flags.hasLoggedIn = false;
+  // conta/login: nunca guardamos credenciais no save — apenas um identificador
+  // de sincronização opcional, usado pelo Auth para saber se há nuvem vinculada.
+  if (!state.account) state.account = { linkedUid: null, lastCloudSyncAt: null };
   return state;
 }
 
@@ -129,7 +162,12 @@ const StateGetters = {
   },
   totalRegisEarned() { return Decimal.from(gameState.totalRegisEarned); },
   celestial() { return Decimal.from(gameState.prestige.celestial); },
-  addCelestial(dec) { gameState.prestige.celestial = StateGetters.celestial().add(Decimal.from(dec)).toJSON(); },
+  addCelestial(dec) {
+    const added = Decimal.from(dec);
+    gameState.prestige.celestial = StateGetters.celestial().add(added).toJSON();
+    gameState.stats.totalCelestialEarned = Decimal.from(gameState.stats.totalCelestialEarned)
+      .add(added).toJSON();
+  },
   spendCelestial(dec) {
     const cost = Decimal.from(dec);
     if (StateGetters.celestial().lt(cost)) return false;

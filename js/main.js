@@ -72,6 +72,15 @@ const Game = {
         case 'theme':
           SettingsLogic.setTheme(actionEl.dataset.theme);
           break;
+        case 'toggle-fullscreen':
+          SettingsLogic.toggleFullscreen();
+          break;
+        case 'auth-login':
+          Auth.openLoginModal();
+          break;
+        case 'auth-logout':
+          Auth.logout();
+          break;
       }
     });
 

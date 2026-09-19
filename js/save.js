@@ -20,6 +20,14 @@ const Save = {
       if (previous) Utils.safeLocalStorageSet(SAVE_BACKUP_KEY, previous);
 
       Utils.safeLocalStorageSet(SAVE_KEY, json);
+
+      // v2: se autenticado, também tenta espelhar na nuvem — mas o
+      // localStorage acima é a fonte de verdade e já foi gravado com
+      // sucesso independentemente do resultado disto.
+      if (typeof Auth !== 'undefined' && Auth.currentUser) {
+        Auth.pushCloudSave();
+      }
+
       return true;
     } catch (e) {
       console.error('Erro ao salvar:', e);
@@ -64,9 +72,17 @@ const Save = {
 
   migrate(save) {
     let version = save.saveVersion || 0;
-    // espaço reservado para futuras migrações de estrutura de save
     if (version < 1) {
       version = 1;
+    }
+    if (version < 2) {
+      // v1 → v2: nenhuma transformação destrutiva necessária. Os campos novos
+      // (produtores transcendentais, prestige.infiniteLevel, account, etc.)
+      // são preenchidos com valores padrão por ensureStateIntegrity() logo
+      // após esta função rodar. Mantemos este bloco como registro explícito
+      // da migração e para futuras regras que porventura precisem de lógica
+      // própria (ex.: recalcular algo a partir de campos antigos).
+      version = 2;
     }
     save.saveVersion = SAVE_VERSION;
     return save;

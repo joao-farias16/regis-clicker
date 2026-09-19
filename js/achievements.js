@@ -25,6 +25,19 @@ const AchievementsLogic = {
         return gameState.stats.rareEventsClicked >= condition.amount;
       case 'maxCombo':
         return gameState.stats.maxCombo >= condition.amount;
+      case 'cpsAtLeast':
+        return Economy.getTotalCps().gte(Decimal.fromNumber(condition.amount));
+      case 'celestialEarned':
+        return Decimal.from(gameState.stats.totalCelestialEarned || Decimal.ZERO.toJSON()).gte(Decimal.fromNumber(condition.amount));
+      case 'infiniteLevel':
+        return (gameState.prestige.infiniteLevel || 0) >= condition.amount;
+      case 'anyBuildingAtLeast':
+        return BUILDINGS_DATA.some(b => StateGetters.buildingOwned(b.id) >= condition.amount);
+      case 'categoryOwned':
+        return BUILDINGS_DATA.filter(b => b.category === condition.category)
+          .every(b => StateGetters.buildingOwned(b.id) > 0);
+      case 'allBuildingsOwned':
+        return BUILDINGS_DATA.every(b => StateGetters.buildingOwned(b.id) > 0);
       case 'manual':
         return this.checkManual(condition.key);
       default:
@@ -60,6 +73,12 @@ const AchievementsLogic = {
         return gameState.flags.importedSave === true;
       case 'foundCosmic':
         return gameState.flags.foundCosmic === true;
+      case 'prestigeTreeComplete':
+        return PRESTIGE_TREE_DATA.every(n => gameState.prestige.permanentUpgrades[n.id]);
+      case 'boughtSynergyUpgrade':
+        return gameState.flags.boughtSynergyUpgrade === true;
+      case 'loggedIn':
+        return gameState.flags.hasLoggedIn === true;
       default:
         return false;
     }

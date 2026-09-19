@@ -14,6 +14,8 @@ const UpgradesLogic = {
         return gameState.clicks >= unlock.amount;
       case 'ascensions':
         return gameState.prestige.ascensions >= unlock.amount;
+      case 'cpsAtLeast':
+        return Economy.getTotalCps().gte(Decimal.fromNumber(unlock.amount));
       default:
         return false;
     }
@@ -44,6 +46,10 @@ const UpgradesLogic = {
     StateGetters.spendRegis(cost);
     gameState.upgradesBought[upgradeId] = true;
     gameState.stats.totalUpgradesBought++;
+
+    if (upgrade.effect && (upgrade.effect.type === 'synergy_mult')) {
+      gameState.flags.boughtSynergyUpgrade = true;
+    }
 
     AudioFX.play('upgrade');
     Notifications.push(`Upgrade desbloqueado: ${upgrade.name}!`, 'upgrade');
