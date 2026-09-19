@@ -276,8 +276,8 @@ body.high-contrast {
 }
 
 #regis-button {
-  width: 260px;
-  height: 260px;
+  width: 220px;
+  height: 220px;
   padding: 0;
   border: none;
   background: transparent;
@@ -298,8 +298,8 @@ body.high-contrast {
 }
 
 #regis-button img {
-  width: 250px;
-  height: 270px;
+  width: 220px;
+  height: 220px;
   object-fit: contain;
   object-position: center;
   display: block;
@@ -743,8 +743,16 @@ body.high-contrast {
   #main { padding: 10px; }
   .upgrade-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
   .achievements-grid { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); }
-  .prestige-tree { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .prestige-tree, .prestige-lines { min-width: 480px; }
+  .prestige-tree {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .prestige-lines {
+    width: 100%;
+    min-width: 0;
+  }
   .modal-actions { flex-direction: column; }
   .modal-actions button { width: 100%; }
 }
@@ -775,3 +783,104 @@ body.high-contrast {
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
+
+/* ============================================================
+   AJUSTES MOBILE — telas estreitas
+   ============================================================ */
+
+@media (max-width: 560px) {
+
+  /* Menu superior */
+  #menu {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+
+  #menu::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-btn {
+    flex: 0 0 auto;
+  }
+
+  /* Aproveita melhor a largura da tela */
+  #main {
+    padding: 8px;
+  }
+
+  #panel-central {
+    width: 100%;
+    padding: 8px 4px;
+  }
+
+  /* Texto de Régis por segundo */
+  #cps-display {
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #cps-value {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* Contador principal */
+  #regis-counter {
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  #click-value-display {
+    width: 100%;
+    text-align: center;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* Produtores */
+  .panel-wrap {
+    padding: 8px;
+  }
+
+  .building-row {
+    gap: 7px;
+    padding: 7px 8px;
+  }
+
+  .building-icon {
+    width: 30px;
+    flex-shrink: 0;
+  }
+
+  .building-info {
+    min-width: 0;
+  }
+
+  .building-cost {
+    max-width: 35%;
+    text-align: right;
+  }
+
+  /* Evita que grids fiquem largos demais */
+  .upgrade-grid {
+    width: 100%;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+
+  .achievements-grid {
+    width: 100%;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+}
+
