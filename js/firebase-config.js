@@ -32,10 +32,10 @@
  * valores diretamente aqui antes do deploy (eles não são segredos).
  */
 window.FIREBASE_CONFIG = {
-  apiKey: '',
-  authDomain: '',
-  projectId: '',
-  storageBucket: '',
-  messagingSenderId: '',
-  appId: ''
+  apiKey: 'AIzaSyCItCNYMq3VHAwurhFRHCIjSZEf2YLK-dY',
+  authDomain: 'regis-clicker.firebaseapp.com',
+  projectId: 'regis-clicker',
+  storageBucket: 'regis-clicker.firebasestorage.app',
+  messagingSenderId: '644100411377',
+  appId: '1:644100411377:web:17c16608fcb1d2e38dfe50'
 };
